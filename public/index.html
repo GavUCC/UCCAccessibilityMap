@@ -45,6 +45,42 @@
     );
     tiles.addTo(map);
 
+    async function loadBuildings() {
+        const res = await fetch('/assets/buildings.geojson');
+        const geojson = await res.json();
+
+        L.geoJSON(geojson, {
+            style: {
+                color: '#0057b8',
+                weight: 2,
+                fillOpacity: 0.4
+            },
+            onEachFeature: (feature, layer) => {
+                const p = feature.properties;
+
+                const floorsHtml = (p.floors || [])
+                    .map(
+                        (img, i) =>
+                            `<div>
+                               <strong>Floor ${i + 1}</strong><br/>
+                               <img src="${img}" style="width:200px; margin-top:4px;" />
+                             </div>`
+                    )
+                    .join('<hr/>');
+
+                const popupHtml = `
+                    <h3>${p.name}</h3>
+                    <p><strong>Opening hours:</strong><br/>${p.opening_hours}</p>
+                    ${floorsHtml}
+                `;
+
+                layer.bindPopup(popupHtml);
+            }
+        }).addTo(map);
+    }
+
+    loadBuildings();
+
     // 3) Click to add a marker
     let marker;
     map.on('click', (e) => {
