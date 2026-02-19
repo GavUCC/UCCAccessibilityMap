@@ -176,7 +176,8 @@
       <h3>Accessibility Router</h3>
       <div class="instructions">
         Click the map to set your <strong>start</strong> point, then click again
-        to set your <strong>end</strong> point. Use <strong>Report Barrier</strong>
+        to set your <strong>end</strong> point. Use
+        <strong>Report Barrier</strong>
         to drop a barrier marker.
       </div>
 
@@ -256,42 +257,44 @@
       const barrierLayer = L.layerGroup().addTo(map)
 
       // Load building data (optional, keeps your existing behaviour)
-      async function loadBuildings() {
-        const res = await fetch("/assets/buildings.geojson");
-        const geojson = await res.json();
+async function loadBuildings() {
+  try {
+    const res = await fetch('/assets/buildings.geojson')
+    if (!res.ok) return
+    const geojson = await res.json()
 
-          L.geoJSON(geojson, {
-            style: {
-              color: '#0057b8',
-              weight: 2,
-              fillOpacity: 0.4
-            },
-            onEachFeature: (feature, layer) => {
-              const p = feature.properties || {}
+    L.geoJSON(geojson, {
+      style: {
+        color: '#0057b8',
+        weight: 2,
+        fillOpacity: 0.4
+      },
+      onEachFeature: (feature, layer) => {
+        const p = feature.properties || {}
 
-              const floorsHtml = (p.floors || [])
-                .map(
-                  (img, i) =>
-                    `<div>
-                      <strong>Floor ${i + 1}</strong><br/>
-                      <img src="${img}" style="width:200px; margin-top:4px;" />
-                    </div>`
-                )
-                .join('<hr/>')
+        const floorsHtml = (p.floors || [])
+          .map(
+            (img, i) =>
+              `<div>
+                <strong>Floor ${i + 1}</strong><br/>
+                <img src="${img}" style="width:200px; margin-top:4px;" />
+              </div>`
+          )
+          .join('<hr/>')
 
-              const popupHtml = `
-                <h3>${p.name || 'Building'}</h3>
-                ${p.opening_hours ? `<p><strong>Opening hours:</strong><br/>${p.opening_hours}</p>` : ''}
-                ${floorsHtml}
-              `
+        const popupHtml = `
+          <h3>${p.name || 'Building'}</h3>
+          ${p.opening_hours ? `<p><strong>Opening hours:</strong><br/>${p.opening_hours}</p>` : ''}
+          ${floorsHtml}
+        `
 
-              layer.bindPopup(popupHtml)
-            }
-          }).addTo(map)
-        } catch (e) {
-          // ignore if file not available yet
-        }
+        layer.bindPopup(popupHtml)
       }
+    }).addTo(map)
+  } catch (e) {
+    // ignore if file not available yet
+  }
+}
 
       loadBuildings()
 
@@ -502,4 +505,3 @@
     </script>
   </body>
 </html>
-
