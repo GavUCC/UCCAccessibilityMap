@@ -223,3 +223,9 @@ button {
   align-items: center;
   justify-content: center;
 }
+
+.leaflet-control-zoom {
+  position: absolute !important;
+  right: 10px !important;
+  left: auto !important;
+}
