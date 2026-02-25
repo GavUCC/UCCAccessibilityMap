@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Init map
   const UCC_CENTER = [51.893, -8.492]
-  const map = L.map('map').setView(UCC_CENTER, 17)
+  const map = L.map('map', { zoomControl: false }).setView(UCC_CENTER, 17)
+  L.control.zoom({ position: 'topright' }).addTo(map)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
