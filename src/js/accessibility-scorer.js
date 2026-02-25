@@ -1,183 +1,147 @@
 'use strict'
 
 /*
-  UCC Accessibility Seed Data
+  Accessibility Scoring Engine
   ----------------------------
-  Known hazards, steps, steep gradients, narrow paths, and surfaces
-  around the UCC main campus.
-
-  Each hazard is a small zone (circle) defined by a center point and radius.
-  When a route passes through or near a hazard zone, it gets flagged.
-
-  You can expand this data by walking the campus and adding entries.
-  Eventually this could live in a database / API instead of a static file.
+  Takes a GeoJSON route (LineString) and checks it against known hazards.
+  Returns a score (0-100), a confidence level, and a list of warnings.
 */
 
-const ACCESSIBILITY_HAZARDS = [
-  // ---- Steps ----
-  {
-    id: 'steps-main-quad',
-    type: 'steps',
-    label: 'Steps at Main Quadrangle',
-    lat: 51.8935,
-    lng: -8.4918,
-    radius: 15,          // meters – how close the route must pass to trigger
-    severity: 'high',    // high = impassable for wheelchair, medium = difficult, low = caution
-    affects: ['wheelchair', 'step-free'],
-    note: 'Stone steps with no ramp alternative nearby'
-  },
-  {
-    id: 'steps-west-wing',
-    type: 'steps',
-    label: 'Steps at West Wing entrance',
-    lat: 51.8938,
-    lng: -8.4935,
-    radius: 12,
-    severity: 'high',
-    affects: ['wheelchair', 'step-free'],
-    note: 'Use side entrance via Donovan\'s Road for step-free access'
-  },
-  {
-    id: 'steps-boole-library',
-    type: 'steps',
-    label: 'Steps at Boole Library front',
-    lat: 51.8932,
-    lng: -8.4901,
-    radius: 12,
-    severity: 'high',
-    affects: ['wheelchair', 'step-free'],
-    note: 'Accessible entrance on ground floor at rear of building'
-  },
-  {
-    id: 'steps-ORB',
-    type: 'steps',
-    label: 'Steps at O\'Rahilly Building',
-    lat: 51.8939,
-    lng: -8.4905,
-    radius: 12,
-    severity: 'high',
-    affects: ['wheelchair', 'step-free'],
-    note: 'Lift access available inside via corridor from Kane Building'
-  },
+const AccessibilityScorer = (() => {
 
-  // ---- Steep gradients ----
-  {
-    id: 'steep-college-road',
-    type: 'steep',
-    label: 'Steep hill on College Road',
-    lat: 51.8922,
-    lng: -8.4935,
-    radius: 25,
-    severity: 'medium',
-    affects: ['wheelchair', 'gentle-gradient', 'low-energy'],
-    note: 'Gradient approx 8-10%. Tiring for manual wheelchair users'
-  },
-  {
-    id: 'steep-gaol-walk',
-    type: 'steep',
-    label: 'Steep incline on Gaol Walk',
-    lat: 51.8942,
-    lng: -8.4880,
-    radius: 20,
-    severity: 'medium',
-    affects: ['wheelchair', 'gentle-gradient', 'low-energy'],
-    note: 'Steady incline heading north. Consider alternative via Western Road'
-  },
+  // Haversine distance in meters between two [lng, lat] points
+  function haversine(coord1, coord2) {
+    const toRad = (deg) => (deg * Math.PI) / 180
+    const R = 6371000 // Earth radius in meters
 
-  // ---- Poor surfaces ----
-  {
-    id: 'cobble-quad',
-    type: 'surface',
-    label: 'Cobblestones in Quad area',
-    lat: 51.8936,
-    lng: -8.4920,
-    radius: 20,
-    severity: 'medium',
-    affects: ['wheelchair', 'step-free'],
-    note: 'Uneven cobblestones, difficult for small wheels'
-  },
-  {
-    id: 'gravel-presidents-garden',
-    type: 'surface',
-    label: 'Gravel path at President\'s Garden',
-    lat: 51.8930,
-    lng: -8.4930,
-    radius: 15,
-    severity: 'low',
-    affects: ['wheelchair'],
-    note: 'Loose gravel, passable but slow for wheelchairs'
-  },
+    const lat1 = toRad(coord1[1])
+    const lat2 = toRad(coord2[1])
+    const dLat = toRad(coord2[1] - coord1[1])
+    const dLng = toRad(coord2[0] - coord1[0])
 
-  // ---- Narrow paths ----
-  {
-    id: 'narrow-north-path',
-    type: 'narrow',
-    label: 'Narrow path behind Aula Maxima',
-    lat: 51.8941,
-    lng: -8.4925,
-    radius: 15,
-    severity: 'medium',
-    affects: ['wheelchair'],
-    note: 'Path narrows to ~90cm at pinch point'
-  },
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2)
 
-  // ---- No kerb drops ----
-  {
-    id: 'kerb-western-road',
-    type: 'kerb',
-    label: 'Missing kerb drop on Western Road crossing',
-    lat: 51.8945,
-    lng: -8.4910,
-    radius: 10,
-    severity: 'medium',
-    affects: ['wheelchair', 'step-free'],
-    note: 'No dropped kerb on south side of crossing'
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   }
-]
 
-/*
-  Accessibility profiles
-  Each profile defines which hazard types matter and how they affect scoring.
-  penalty: how many points to deduct per hazard (out of 100 starting score)
-*/
-const ACCESSIBILITY_PROFILES = {
-  'step-free': {
-    label: 'Step-free (wheelchair)',
-    description: 'Avoids all steps, flags steep gradients and poor surfaces',
-    penalties: {
-      steps:   { high: 50, medium: 30, low: 15 },
-      steep:   { high: 25, medium: 15, low: 5  },
-      surface: { high: 20, medium: 10, low: 5  },
-      narrow:  { high: 25, medium: 15, low: 5  },
-      kerb:    { high: 20, medium: 10, low: 5  }
+  // Check if any point on the route passes within `radius` meters of a hazard
+  function routePassesNear(routeCoords, hazard) {
+    const hazardCoord = [hazard.lng, hazard.lat] // [lng, lat] to match GeoJSON
+    let minDist = Infinity
+
+    for (const coord of routeCoords) {
+      const dist = haversine(coord, hazardCoord)
+      if (dist < minDist) minDist = dist
+      if (dist <= hazard.radius) {
+        return { hit: true, distance: dist }
+      }
     }
-  },
-  'gentle-gradient': {
-    label: 'Gentle gradient',
-    description: 'Avoids steep hills and steps, suitable for crutches or pain/fatigue conditions',
-    penalties: {
-      steps:   { high: 40, medium: 25, low: 10 },
-      steep:   { high: 35, medium: 20, low: 10 },
-      surface: { high: 10, medium: 5,  low: 0  },
-      narrow:  { high: 5,  medium: 0,  low: 0  },
-      kerb:    { high: 15, medium: 10, low: 5  }
-    }
-  },
-  'low-energy': {
-    label: 'Low energy / fatigue',
-    description: 'Prefers flat, short routes. Flags anything tiring',
-    penalties: {
-      steps:   { high: 30, medium: 20, low: 10 },
-      steep:   { high: 30, medium: 20, low: 10 },
-      surface: { high: 15, medium: 10, low: 5  },
-      narrow:  { high: 5,  medium: 0,  low: 0  },
-      kerb:    { high: 10, medium: 5,  low: 0  }
-    }
+
+    return { hit: false, distance: minDist }
   }
-}
 
-// Make available globally
+  /**
+   * Score a route for a given accessibility profile.
+   *
+   * @param {Array} routeCoords  - GeoJSON coordinates array [[lng,lat], ...]
+   * @param {string} profileId   - Key from ACCESSIBILITY_PROFILES
+   * @param {Array} hazards      - ACCESSIBILITY_HAZARDS array
+   * @param {Array} barriers     - User-reported barriers [{lat, lng, time}, ...]
+   * @param {Object} profiles    - ACCESSIBILITY_PROFILES object
+   *
+   * @returns {Object} { score, level, warnings, hazardsHit }
+   */
+  function scoreRoute(routeCoords, profileId, hazards, barriers, profiles) {
+    const profile = profiles[profileId]
+    if (!profile) {
+      return {
+        score: -1,
+        level: 'unknown',
+        color: '#9e9e9e',
+        warnings: [{ text: `Unknown profile: ${profileId}`, severity: 'low' }],
+        hazardsHit: []
+      }
+    }
+
+    let score = 100
+    const warnings = []
+    const hazardsHit = []
+
+    // --- Check known hazards ---
+    for (const hazard of hazards) {
+      const result = routePassesNear(routeCoords, hazard)
+
+      if (result.hit) {
+        const penalty = profile.penalties[hazard.type]?.[hazard.severity] || 0
+
+        if (penalty > 0) {
+          score -= penalty
+          hazardsHit.push(hazard)
+
+          warnings.push({
+            id: hazard.id,
+            text: hazard.label,
+            note: hazard.note,
+            type: hazard.type,
+            severity: hazard.severity,
+            distance: Math.round(result.distance)
+          })
+        }
+      }
+    }
+
+    // --- Check user-reported barriers ---
+    // Barriers within 20m of route get a flat penalty
+    const BARRIER_RADIUS = 20
+    const BARRIER_PENALTY = 15
+
+    for (const barrier of barriers) {
+      const barrierAsHazard = { lat: barrier.lat, lng: barrier.lng, radius: BARRIER_RADIUS }
+      const result = routePassesNear(routeCoords, barrierAsHazard)
+
+      if (result.hit) {
+        score -= BARRIER_PENALTY
+        warnings.push({
+          id: `barrier-${barrier.time}`,
+          text: 'User-reported barrier nearby',
+          note: barrier.description || 'No details provided',
+          type: 'barrier',
+          severity: 'medium',
+          distance: Math.round(result.distance)
+        })
+      }
+    }
+
+    // Clamp score
+    score = Math.max(0, Math.min(100, score))
+
+    // Determine level and color
+    let level, color
+    if (score >= 80) {
+      level = 'high'
+      color = '#4caf50' // green
+    } else if (score >= 50) {
+      level = 'medium'
+      color = '#ff9800' // orange
+    } else {
+      level = 'low'
+      color = '#f44336' // red
+    }
+
+    // Sort warnings by severity (high first)
+    const severityOrder = { high: 0, medium: 1, low: 2 }
+    warnings.sort((a, b) => (severityOrder[a.severity] || 2) - (severityOrder[b.severity] || 2))
+
+    return { score, level, color, warnings, hazardsHit }
+  }
+
+  // Public API
+  return { scoreRoute, routePassesNear, haversine }
+})()
+
 if (typeof window !== 'undefined') {
-  window.ACCESSIBILITY_HAZARDS = ACCESSIBILITY_HAZARDS
-  window.ACCESSIBILITY_PROFILES = ACCESSIBILITY_PROFILES
+  window.AccessibilityScorer = AccessibilityScorer
 }
