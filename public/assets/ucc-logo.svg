@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" role="img" aria-labelledby="title desc">
+  <title id="title">University College Cork logo lockup</title>
+  <desc id="desc">UCC crest with wordmark and bilingual subtitle</desc>
+  <defs>
+    <linearGradient id="crestGold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f8d257"/>
+      <stop offset="1" stop-color="#d8a621"/>
+    </linearGradient>
+    <linearGradient id="crestBlue" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#2a4f83"/>
+      <stop offset="1" stop-color="#17355d"/>
+    </linearGradient>
+    <linearGradient id="crestRed" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#bf2f3d"/>
+      <stop offset="1" stop-color="#8f1f2b"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="260" fill="none"/>
+
+  <g transform="translate(18,16)">
+    <path d="M20 18 H176 V126 C176 165 147 199 98 214 C49 199 20 165 20 126 Z" fill="url(#crestGold)" stroke="#1b1b1b" stroke-width="5"/>
+    <rect x="34" y="36" width="64" height="76" fill="url(#crestRed)" stroke="#1b1b1b" stroke-width="2"/>
+    <rect x="98" y="36" width="64" height="76" fill="url(#crestBlue)" stroke="#1b1b1b" stroke-width="2"/>
+    <rect x="34" y="112" width="64" height="72" fill="url(#crestBlue)" stroke="#1b1b1b" stroke-width="2"/>
+    <rect x="98" y="112" width="64" height="72" fill="url(#crestRed)" stroke="#1b1b1b" stroke-width="2"/>
+
+    <path d="M47 54 H85 M66 42 V66" stroke="#f7dd76" stroke-width="4" stroke-linecap="round"/>
+    <path d="M116 50 L130 44 L144 50 V64 L130 70 L116 64 Z" fill="#f7dd76"/>
+    <circle cx="66" cy="148" r="14" fill="#f7dd76"/>
+    <path d="M118 146 H144 M118 156 H144" stroke="#f7dd76" stroke-width="4" stroke-linecap="round"/>
+
+    <path d="M38 16 C46 8 57 8 66 16" fill="none" stroke="#1b1b1b" stroke-width="3"/>
+    <path d="M78 16 C86 8 97 8 106 16" fill="none" stroke="#1b1b1b" stroke-width="3"/>
+    <path d="M118 16 C126 8 137 8 146 16" fill="none" stroke="#1b1b1b" stroke-width="3"/>
+  </g>
+
+  <text x="220" y="110" font-family="Times New Roman, Georgia, serif" font-size="118" font-weight="500" fill="#111111" letter-spacing="1">UCC</text>
+  <text x="222" y="172" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" fill="#111111">University College Cork, Ireland</text>
+  <text x="222" y="214" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="500" fill="#575757">Coláiste na hOllscoile Corcaigh</text>
+</svg>

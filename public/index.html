@@ -2,17 +2,67 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>UCC AccessPath Platform</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AccessPath Platform</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="./src/css/style.css" />
+    <link rel="stylesheet" href="/src/css/style.css" />
   </head>
   <body>
-    <div class="control-panel">
-      <h3>UCC AccessPath</h3>
-      <div class="instructions">
-        Select Start and End points. Use <strong>Report Barrier</strong> to flag structural obstacles.
+    <a class="skip-link" href="#controlPanel">Skip to controls</a>
+    <a class="skip-link" href="#map">Skip to map</a>
+
+    <div class="control-panel" id="controlPanel">
+      <button
+        id="panelSnapBtn"
+        class="panel-snap-btn"
+        type="button"
+        aria-controls="controlPanel"
+        aria-expanded="true"
+        aria-label="Hide controls panel"
+      >
+        Hide Controls
+      </button>
+      <div class="panel-brand">
+        <img
+          id="brandLogo"
+          class="brand-logo"
+          src="/assets/ucc-logo.svg"
+          alt="University College Cork logo"
+          loading="eager"
+          decoding="async"
+        />
+        <h1>AccessPath Router</h1>
+        <p class="brand-subtitle">
+          Inclusive routing, hazard reporting, and live maintenance triage.
+        </p>
       </div>
+
+      <div class="instructions">
+        Choose your <strong>mobility profile</strong>, tap or click the map for <strong>start</strong> and <strong>end</strong>, then calculate the <strong>most accessible route</strong> with a confidence score.
+      </div>
+
+      <div class="accessibility-toolbar" aria-label="Display accessibility controls">
+        <button id="toggleTextModeBtn" class="accessibility-option" type="button" aria-pressed="false">
+          Readable Text
+        </button>
+        <button id="toggleContrastModeBtn" class="accessibility-option" type="button" aria-pressed="false">
+          High Contrast
+        </button>
+      </div>
+
+      <label class="form-label" for="profileSelect">Mobility profile:</label>
+      <select id="profileSelect" class="profile-select">
+        <option value="default-walking" selected>Default walking</option>
+        <option value="manual-wheelchair">Manual wheelchair</option>
+        <option value="powered-wheelchair">Powered wheelchair</option>
+        <option value="mobility-scooter">Mobility scooter</option>
+        <option value="crutches">Crutches</option>
+        <option value="blind-low-vision">Blind or low vision</option>
+        <option value="sensory-sensitive">Sensory sensitive</option>
+      </select>
 
       <div id="startPoint" class="point-display active">
         <span class="point-label">Start:</span>
@@ -25,85 +75,286 @@
       </div>
 
       <div class="button-group">
-        <button id="reportBtn" class="btn-warning" type="button">🚩 Report Barrier</button>
+        <button id="reportBtn" class="btn-warning" type="button">Report Barrier</button>
       </div>
+
+      <p id="quickTagHelp" class="route-note">
+        Quick hazard tags: tap a symbol, then tap the map where the barrier is located.
+      </p>
+      <div class="quick-tag-legend" id="quickTagLegend" aria-label="Quick tag definitions">
+        <p><strong>Lift:</strong> Lift or elevator is unavailable.</p>
+        <p><strong>Ramp:</strong> Ramp is blocked, missing, or unusable.</p>
+        <p><strong>Crowd:</strong> Severe crowding or queue blocks access.</p>
+        <p><strong>Works:</strong> Temporary works or barriers block step-free movement.</p>
+        <p><strong>Surface:</strong> Uneven, broken, or slippery ground is unsafe.</p>
+        <p><strong>Crossing:</strong> Unsafe crossing point, kerb, or tactile paving issue.</p>
+      </div>
+
+      <button id="voiceReportBtn" class="voice-report-btn" type="button" aria-label="Start voice hazard report">
+        Voice Report
+      </button>
+      <p id="voiceHelp" class="route-note">
+        Voice on mobile: tap Voice Report, speak naturally, then pause for 3 seconds to save automatically. You can also tap Stop Listening.
+      </p>
 
       <div class="button-group">
         <button id="routeBtn" class="btn-primary" disabled type="button">Get Route</button>
         <button id="clearBtn" class="btn-secondary" type="button">Clear</button>
       </div>
-      
-      <button id="adminToggleBtn" class="btn-dark" type="button" style="margin-top: 15px; width: 100%;">View Admin Data</button>
 
-      <div id="statusMessage" class="status-message"></div>
+      <p id="temporalModeHint" class="route-note"></p>
+
+      <button
+        id="adminToggleBtn"
+        class="btn-dark admin-toggle-btn"
+        type="button"
+        aria-controls="adminSidebar"
+        aria-expanded="false"
+      >
+        Operations Console
+      </button>
+
+      <div id="statusMessage" class="status-message" role="status" aria-live="polite" aria-atomic="true"></div>
+      <p id="routingEngineHint" class="route-note"></p>
 
       <div id="routeInfo" class="route-info">
         <div class="route-stat">
-          <span class="route-stat-label">Distance:</span>
-          <span class="route-stat-value" id="routeDistance">-</span>
+          <span class="route-stat-label">Fastest (blue dashed):</span>
+          <span class="route-stat-value" id="fastestRouteSummary">-</span>
         </div>
         <div class="route-stat">
-          <span class="route-stat-label">Est. time:</span>
-          <span class="route-stat-value" id="routeTime">-</span>
+          <span class="route-stat-label">Most accessible (red dashed):</span>
+          <span class="route-stat-value" id="accessibleRouteSummary">-</span>
         </div>
-        <div class="route-stat" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ccc;">
-          <span class="route-stat-label">Access Confidence:</span>
-          <span class="route-stat-value" id="routeConfidence" style="color: #2196f3;">-</span>
+        <div class="route-stat">
+          <span class="route-stat-label">Difference vs fastest:</span>
+          <span class="route-stat-value" id="routeDelta">-</span>
         </div>
+        <div class="route-stat route-stat-accent">
+          <span class="route-stat-label">Accessibility score:</span>
+          <span class="route-stat-value route-confidence" id="routeConfidence">-</span>
+        </div>
+        <div id="gradientHeatLegend" class="gradient-heat-legend" hidden aria-label="Gradient heat legend">
+          <span class="gradient-heat-label">Gradient heat:</span>
+          <span class="gradient-heat-chip gradient-heat-green">Green &lt; 5%</span>
+          <span class="gradient-heat-chip gradient-heat-amber">Amber 5-8%</span>
+          <span class="gradient-heat-chip gradient-heat-red">Red &ge; 8%</span>
+        </div>
+        <p id="routeSelectionNote" class="route-note"></p>
+      </div>
+      <details id="routeDetailsPanel" class="route-details-panel" hidden>
+        <summary>Route Details</summary>
+        <div class="route-details-metrics">
+          <span id="detailDistance">Distance: -</span>
+          <span id="detailAscent">Ascent: -</span>
+          <span id="detailMaxSlope">Max slope: -</span>
+          <span id="detailConfidence">Confidence: -</span>
+        </div>
+        <ul id="routeReasonList" class="route-reason-list"></ul>
+      </details>
+
+      <section
+        id="communityConfidenceCard"
+        class="community-confidence-card"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <div class="confidence-header">
+          <h4>Community Confidence</h4>
+          <span id="communityConfidenceBadge" class="confidence-badge" data-tier="emerging">Emerging</span>
+        </div>
+        <p class="confidence-intro">Confidence strengthens as users submit route outcomes and resolution feedback.</p>
+        <div class="confidence-score-row">
+          <span id="communityConfidenceScore" class="confidence-score-value">50</span>
+          <span class="confidence-score-scale">/100</span>
+        </div>
+        <div class="confidence-meter" role="img" aria-label="Community confidence meter">
+          <span id="communityConfidenceBar" class="confidence-meter-fill" style="width: 50%"></span>
+        </div>
+        <div class="confidence-stats">
+          <span id="communityConfidenceReports">0 reports</span>
+          <span id="communityConfidenceRates">Useful 0% • Resolved 0%</span>
+        </div>
+        <p id="communityConfidenceMessage" class="route-note confidence-note">
+          Submit route feedback after travel to build stronger confidence calibration.
+        </p>
+      </section>
+
+      <div id="gradientDetailPanel" class="gradient-detail-panel" hidden>
+        <div class="gradient-header-row">
+          <h4>Gradient Detail</h4>
+          <label class="gradient-sample-label" for="gradientSampleSelect">Sample</label>
+          <select id="gradientSampleSelect" class="gradient-sample-select">
+            <option value="3">3 m</option>
+            <option value="5" selected>5 m</option>
+          </select>
+        </div>
+
+        <div class="gradient-metrics-grid">
+          <div class="gradient-metric">
+            <span class="gradient-metric-label">Max slope</span>
+            <span class="gradient-metric-value" id="gradientMaxSlope">-</span>
+          </div>
+          <div class="gradient-metric">
+            <span class="gradient-metric-label">Average slope</span>
+            <span class="gradient-metric-value" id="gradientAvgSlope">-</span>
+          </div>
+          <div class="gradient-metric">
+            <span class="gradient-metric-label">Steep distance (>=8%)</span>
+            <span class="gradient-metric-value" id="gradientSteepDistance">-</span>
+          </div>
+          <div class="gradient-metric">
+            <span class="gradient-metric-label">Sustained steep sections</span>
+            <span class="gradient-metric-value" id="gradientSustainedCount">-</span>
+          </div>
+        </div>
+
+        <p id="gradientSourceNote" class="route-note"></p>
+        <ul id="gradientSectionList" class="gradient-section-list"></ul>
+
+        <form id="gradientSpotCheckForm" class="gradient-spot-check-form">
+          <p class="quick-label">On-site inclinometer spot check</p>
+          <label class="form-label" for="spotSlopeInput">Measured slope (%)</label>
+          <input id="spotSlopeInput" type="number" step="0.1" min="0" max="45" required />
+          <label class="form-label" for="spotCheckNotes">Notes (optional)</label>
+          <textarea id="spotCheckNotes" rows="2" placeholder="Location detail, surface condition, direction"></textarea>
+          <button id="spotCheckSaveBtn" class="btn-secondary" type="submit">Log Spot Check</button>
+          <p id="spotCheckStatus" class="admin-status-feedback"></p>
+        </form>
+      </div>
+
+      <div id="postRouteFeedback" class="route-feedback-panel" hidden>
+        <h4>After your journey</h4>
+        <form id="routeFeedbackForm">
+          <p class="quick-label">Was the app useful?</p>
+          <div class="quick-grid quick-grid-inline">
+            <label><input type="radio" name="wasUseful" value="yes" required /> Yes</label>
+            <label><input type="radio" name="wasUseful" value="no" required /> No</label>
+          </div>
+
+          <p class="quick-label">Did your issue get resolved today?</p>
+          <div class="quick-grid quick-grid-inline">
+            <label><input type="radio" name="issueResolved" value="yes" required /> Yes</label>
+            <label><input type="radio" name="issueResolved" value="no" required /> No</label>
+          </div>
+
+          <label class="form-label" for="feedbackUserGroup">User group</label>
+          <select id="feedbackUserGroup" required>
+            <option value="wheelchair">Wheelchair user</option>
+            <option value="visually_impaired">Visually impaired</option>
+            <option value="physical_impairment">Physical impairment</option>
+            <option value="temporary_injury">Temporary injury</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label class="form-label" for="routeFeedbackComment">Anything to improve? (optional)</label>
+          <textarea id="routeFeedbackComment" rows="2" placeholder="Short feedback"></textarea>
+
+          <button id="submitRouteFeedbackBtn" class="btn-primary" type="submit">Send Feedback</button>
+          <p id="routeFeedbackStatus" class="admin-status-feedback"></p>
+        </form>
       </div>
     </div>
 
+    <button id="panelToggleBtn" class="panel-toggle-btn" type="button" aria-controls="controlPanel" aria-expanded="false">Show Controls</button>
+
     <div id="comprehensiveReportModal" class="modal">
-      <div class="modal-content">
-        <span class="close-btn" id="closeReportModal">&times;</span>
-        <h2>Submit Barrier Evidence</h2>
-        <p>You selected coordinates: <span id="reportCoordinateDisplay" style="font-family: monospace; color: #555;"></span></p>
-        
-        <form id="evidenceForm">
-          <label class="form-label">Classification</label>
-          <select id="barrierTypeSelect" required>
-            <option value="">Select obstacle nature...</option>
-            <option value="Broken Lift">Broken Lift or Elevator</option>
-            <option value="Steep Gradient">Unmanageable Gradient</option>
-            <option value="Missing Ramp">Stairs without Ramp Access</option>
-            <option value="Construction">Construction Blockage</option>
-            <option value="Uneven Surface">Severe Cobblestones / Uneven Paving</option>
-          </select>
+      <div class="modal-content" role="dialog" aria-modal="true" aria-label="Quick barrier report">
+        <button class="close-btn" id="closeReportModal" type="button" aria-label="Close report dialog">&times;</button>
+        <h2>Quick Barrier Report</h2>
+        <p>Selected location: <span id="reportCoordinateDisplay" class="report-coordinates"></span></p>
 
-          <label class="form-label">Severity Level</label>
-          <select id="severitySelect" required>
-            <option value="High">High - Completely impassable</option>
-            <option value="Medium" selected>Medium - Major detour required</option>
-            <option value="Low">Low - Difficult but manageable</option>
-          </select>
+        <form id="evidenceForm" enctype="multipart/form-data">
+          <p class="quick-label">What is the issue? (tick one or more)</p>
+          <div class="quick-grid">
+            <label><input type="checkbox" name="barrierCategory" value="Broken Lift" /> Broken lift</label>
+            <label><input type="checkbox" name="barrierCategory" value="Missing Ramp" /> Missing ramp</label>
+            <label><input type="checkbox" name="barrierCategory" value="Steep Gradient" /> Steep gradient</label>
+            <label><input type="checkbox" name="barrierCategory" value="Severe Crowding" /> Severe crowding</label>
+            <label><input type="checkbox" name="barrierCategory" value="Construction" /> Construction blockage</label>
+            <label><input type="checkbox" name="barrierCategory" value="Uneven Surface" /> Uneven/cobbled surface</label>
+          </div>
 
-          <label class="form-label">Photographic Evidence</label>
+          <p class="quick-label">Who does it impact? (optional)</p>
+          <div class="quick-grid">
+            <label><input type="checkbox" name="impactGroup" value="wheelchair" /> Wheelchair users</label>
+            <label><input type="checkbox" name="impactGroup" value="visually_impaired" /> Visually impaired</label>
+            <label><input type="checkbox" name="impactGroup" value="physical_impairment" /> Physical impairment</label>
+            <label><input type="checkbox" name="impactGroup" value="temporary_injury" /> Temporary injury</label>
+          </div>
+
+          <p class="quick-label">Severity</p>
+          <div class="quick-grid quick-grid-inline">
+            <label><input type="radio" name="severityLevel" value="high" /> High</label>
+            <label><input type="radio" name="severityLevel" value="medium" checked /> Medium</label>
+            <label><input type="radio" name="severityLevel" value="low" /> Low</label>
+          </div>
+
+          <label class="form-label" for="barrierPhoto">Photo (optional)</label>
           <input type="file" id="barrierPhoto" accept="image/*" capture="environment" />
 
-          <label class="form-label">Contextual Details</label>
-          <textarea id="barrierDescription" placeholder="Provide specific details about the obstruction..." required rows="3"></textarea>
-          
+          <label class="form-label" for="barrierDescription">Details (optional)</label>
+          <textarea id="barrierDescription" placeholder="Any extra context" rows="3"></textarea>
+
           <button type="submit" class="btn-primary" id="submitEvidenceBtn">Upload Record</button>
         </form>
       </div>
     </div>
 
-    <div id="adminSidebar" class="sidebar">
-        <div class="sidebar-header">
-            <h2>Backend Database</h2>
-            <span class="close-sidebar" id="closeSidebar">&times;</span>
-        </div>
-        <div class="sidebar-content" id="adminDataContainer">
-            <p>Initiating database query...</p>
-        </div>
+    <button
+      id="uiBackdrop"
+      class="ui-backdrop"
+      type="button"
+      aria-label="Close open panel"
+      aria-hidden="true"
+      hidden
+    ></button>
+
+    <div id="adminSidebar" class="sidebar" role="dialog" aria-label="Admin panel" aria-modal="false">
+      <div class="sidebar-header">
+        <h2>Admin Panel</h2>
+        <button
+          id="adminCloseBtn"
+          class="sidebar-close-btn"
+          type="button"
+          aria-label="Close admin panel"
+        >
+          &times;
+        </button>
+      </div>
+      <p id="adminLiveStatus" class="route-note admin-live-note">Live sync: disconnected</p>
+      <div class="sidebar-content" id="adminDataContainer">
+        <p>Initiating database query...</p>
+      </div>
     </div>
 
-    <div id="map"></div>
+    <div id="quickTagDock" class="quick-tag-dock" aria-label="Quick hazard tags" role="group">
+      <button type="button" class="quick-tag-btn quick-tag-lift" data-hazard-type="Broken Lift" title="Tap then place on map: lift unavailable" aria-label="Quick tag: lift unavailable">Lift Out</button>
+      <button type="button" class="quick-tag-btn quick-tag-ramp" data-hazard-type="Missing Ramp" title="Tap then place on map: blocked or missing ramp" aria-label="Quick tag: blocked or missing ramp">Ramp Blocked</button>
+      <button type="button" class="quick-tag-btn quick-tag-crowd" data-hazard-type="Severe Crowding" title="Tap then place on map: severe crowding" aria-label="Quick tag: severe crowding">Crowded</button>
+      <button type="button" class="quick-tag-btn quick-tag-work" data-hazard-type="Construction" title="Tap then place on map: construction blockage" aria-label="Quick tag: construction blockage">Works</button>
+      <button type="button" class="quick-tag-btn quick-tag-surface" data-hazard-type="Uneven Surface" title="Tap then place on map: unsafe surface" aria-label="Quick tag: unsafe surface">Surface</button>
+      <button type="button" class="quick-tag-btn quick-tag-crossing" data-hazard-type="Unsafe Crossing" title="Tap then place on map: unsafe crossing point" aria-label="Quick tag: unsafe crossing">Crossing</button>
+    </div>
+    <div id="quickTagFeedback" class="quick-tag-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+
+    <button
+      type="button"
+      id="adminFloatingBtn"
+      class="admin-floating-btn"
+      aria-label="Open admin panel"
+      aria-controls="adminSidebar"
+      aria-expanded="false"
+    >
+      Admin
+    </button>
+
+    <div id="screenReaderNarrative" class="sr-only-live" aria-live="polite" aria-atomic="true"></div>
+    <div id="screenReaderAlert" class="sr-only-live" aria-live="assertive" aria-atomic="true"></div>
+
+    <div id="map" role="region" aria-label="Campus accessibility map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-    <script src="./src/js/accessibility-data.js"></script>
-    <script src="./src/js/accessibility-scorer.js"></script>
-    <script type="module" src="./src/js/map.js"></script>
+    <script type="module" src="/src/js/map.js"></script>
   </body>
 </html>

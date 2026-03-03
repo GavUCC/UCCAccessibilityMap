@@ -5,8 +5,12 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "vite",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node server.js",
+    "dev:vite": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.js",
+    "check:full": "npm test && npm run build && node --check server.js && node --check public/src/js/map.js"
   },
   "keywords": [],
   "author": "",
@@ -14,7 +18,9 @@
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
+    "express-rate-limit": "^7.4.1",
     "express": "^5.2.1",
+    "helmet": "^8.0.0",
     "multer": "^2.0.2",
     "pg": "^8.18.0",
     "sqlite3": "^5.0.2"
