@@ -197,31 +197,39 @@ Testing included attempting to generate a route with only one point set (the but
 
 My biggest lesson throughout the development of this application was to **expect the worst** while planning. I had entered this project somewhat naively thinking that the features we would looking for would be readily available and not too expensive. However, upon development, the need for a local workaround became a top priority due to only a single routing provider having the route options we needed and they were locked behind paywall. Thankfully, I was able to use GraphHopper 11's Java archive file to run a GH server locally. This however took a lot of time from other tasks I would have liked to develop further such as alternative routing and added functionality for visually impaired users.
 
-### 6.2 Personal Reflection (Conor)
-
-#### 6.2.1 Routing Engine Challenges
-
-**OSRM limitations**
-As described in Section 6.1, the initial OSRM integration produced working routes but lacked any mechanism for penalising accessibility barriers. Identifying this early saved time, but it did mean the routing layer had to be rebuilt around a different engine.
-
-#### 6.2.2 Frontend Interaction Challenges
+### 6.2 Frontend Interaction Challenges
 
 Several frontend bugs emerged during development, particularly around the interaction between routing and barrier reporting.
-### 6.3 Personal Reflection (Jack)
+
+**Marker state issues**  
+Early versions had a problem where clicking the map in reporting mode would also set or overwrite a routing point. This happened because both the routing click handler and the reporting click handler were listening to the same map click event. The fix was to check `reportingMode` at the top of the click handler and return early if it was active, so that routing point logic was completely skipped during barrier placement. Similarly, in building mode, map clicks are intercepted to prevent accidental point placement, and the user is instead prompted to use the dropdown selectors.
+
+**Route refresh and request timing**  
+When the user changed the mobility profile or moved a point and immediately clicked "Get Route", there were cases where an older routing response would arrive after a newer one, causing the displayed route to be out of date. This was partly a timing issue with asynchronous fetch calls. While a full request cancellation system was not implemented, the team addressed the most visible cases by clearing the existing route layer before each new request and ensuring the status message reflects the current state.
+
+**JSON parsing issues**  
+During integration, there were intermittent errors where the frontend would fail to parse the routing response. These were traced to cases where GraphHopper returned an error response, for example when no route could be found between two points, that was not valid JSON in the format the frontend expected. The fix involved checking `response.ok` before attempting to parse and providing a clear error message to the user when routing failed.
+
+### 6.3 Personal Reflection (Conor)
+
+The first working prototype of the map was valuable because it moved the project from a general idea into a functioning system. It proved that users could select route points and see a generated path on the map, but it also showed that a general-purpose routing engine was not enough for accessibility-focused navigation. In that sense, the prototype stage was successful even though it was not the final solution. It exposed the real problem and made later design decisions more informed.
+
+Another important lesson was that a route engine cannot simply be judged by whether it returns a path. It also has to be judged by whether that path matches the needs of the user. That was one of the most important technical insights from the early OSRM work and it shaped the rest of the project.
+
+### 6.4 Personal Reflection (Jack)
 
 My biggest lesson from this project was learning to step up and put myself forward for specific tasks. Because the rest of the group were also willing to take responsibility for their own areas of work, I had to make myself known when there was something I wanted to contribute to or implement. That was a useful lesson in group work, because it showed me that good teamwork does not just happen automatically. You have to actively communicate what you want to do and then follow through on it.
 
 I also learned the importance of being willing to move away from a system that is not working, even if the original idea seemed better on paper. The floor plan popup being displayed on the same page as the map initially seemed like the stronger idea, but once it became clear that showing multiple floors in the same interface would make the page too cluttered, opening the floor plans in a new tab became the more practical solution. That was a good reminder that a simpler implementation is sometimes the better one if it improves usability.
 
 One limitation I ran into was that it was not possible to get floor plans for every building. Some buildings were much easier to find information for than others, while others were more restricted or simply harder to locate on the UCC website. Looking back, I could have done more to explore additional sources and routes for finding missing information. That is something I would improve on in future work, both in terms of persistence and in terms of being more flexible when information is not easy to access.
-**Marker state issues**
-Early versions had a problem where clicking the map in reporting mode would also set or overwrite a routing point. This happened because both the routing click handler and the reporting click handler were listening to the same map click event. The fix was to check reportingMode at the top of the click handler and return early if it was active, so that routing point logic is completely skipped during barrier placement. Similarly, in building mode, map clicks are intercepted to prevent accidental point placement, the user is instead prompted to use the dropdown selectors.
+### 6.5 Personal Reflection (James)
 
-**Route refresh and request timing**
-When the user changed the mobility profile or moved a point and immediately clicked "Get Route", there were cases where an older routing response would arrive after a newer one, causing the displayed route to be out of date. This was partly a timing issue with asynchronous fetch calls. While a full request cancellation system was not implemented, the team addressed the most visible cases by clearing the existing route layer before each new request and ensuring the status message reflects the current state.
+The biggest lesson I took from this project was that accessibility becomes much more serious when you see the barriers for yourself rather than only discussing them in theory. Going around campus with Patrick, a wheelchair user, made the problem feel immediate and real. I was honestly shocked by how much of UCC still feels inaccessible in practice, especially around the Kane Building. That experience changed how I thought about the project. It stopped being just a technical mapping task and became something that felt much more urgent and personal.
 
-**JSON parsing issues**
-During integration, there were intermittent errors where the frontend would fail to parse the routing response. These were traced to cases where GraphHopper returned an error response (for example, when no route could be found between two points) that was not valid JSON in the format the frontend expected. The fix involved checking response.ok before attempting to parse and providing a clear error message to the user when routing failed.
+I also learned that software can do two things at once: it can solve part of a problem directly, and it can also make the wider problem more visible. The map, accessibility scoring, barrier reporting, and feedback system are useful in themselves, but they also help highlight where the physical campus still needs improvement. That matters to me because the goal should not only be to help users work around barriers, but also to make those barriers harder to ignore.
+
+Another important lesson was the value of connecting technical work with real follow-up action. This project pushed me to think beyond the code and towards what can actually change. I am meeting Tony Carey, Head of Buildings and Estates, next week to discuss what action can be taken, because I do not want this to remain only a report or a prototype. I want it to contribute to a wider conversation about accessibility on campus and what needs to improve.
 ## 7. Barrier Reporting, Admin Review, and User Feedback
 
 ### 7.1 Why Barrier Reporting and Feedback Were Needed
