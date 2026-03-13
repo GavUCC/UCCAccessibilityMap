@@ -265,7 +265,17 @@ There is still a lot of room for future work. A stronger standalone admin interf
 
 In short, this part of the project captures one of the main ideas behind the whole system. Accessibility cannot be treated as a one-time calculation. It has to be treated as an ongoing relationship between route data, software logic, and the people who actually move through the campus.
 ## 8. Conclusion
+This project showed that accessibility-aware navigation is a much richer problem than simply drawing a route between two points. Standard routing can identify where a path exists, but it does not necessarily explain whether that path is realistic, safe, or comfortable for the person using it. By combining route generation with accessibility scoring, hazard-aware logic, barrier reporting, and user feedback, the UCC Accessibility Map moves closer to a system that can reflect real movement across campus rather than idealised map geometry alone.
 
+One of the clearest lessons from the project was that accessibility cannot be treated as an abstract idea. Going around campus with Patrick, a wheelchair user, made that obvious. It exposed the difference between routes that exist in theory and routes that actually work in practice. In particular, the experience around the Kane Building highlighted how visible and frustrating those gaps can still be. That gave the project a stronger purpose and pushed it beyond a purely technical exercise. It also created a path forward beyond the software itself, with James due to meet Tony Carey, Head of Buildings and Estates, to discuss what action can be taken.
+
+From a technical point of view, the project developed from a simple routing prototype into a more complete system. The early OSRM-based approach was useful because it proved that routes could be generated and displayed, but it also exposed the limits of general-purpose routing for accessibility-focused use. The move to GraphHopper, together with the local backend server, route profiles, hazard interpretation, and persistent storage for barriers and feedback, gave the application a much stronger architectural foundation. This is one of the main achievements of the project, because it shows how accessibility concerns can be built into the logic of the system rather than added as an afterthought.
+
+The project also demonstrated the importance of user contribution. Barrier reporting and feedback do not simply add extra form fields to the application. They allow the system to represent real conditions more honestly. A route can now be judged not only by geometry but also by warnings, reported issues, and user experience. That makes the map more dynamic, more useful, and more grounded in reality.
+
+Jack’s contributions also helped keep the system practical for real campus use. Verification of building data, route reconnaissance, and floor plan support all made the application more usable from a student’s point of view. This matters because an accessibility tool only becomes meaningful when people can connect the software’s route suggestions to the spaces they are actually trying to reach.
+
+There is still plenty of scope for future work. A fuller admin interface, richer route-specific feedback, stronger confidence modelling, and broader campus data coverage would all improve the system further. Even so, the project already demonstrates something valuable: accessibility information becomes much more meaningful when it is treated as local, changing, and shaped by real experience. Ultimately, the UCC Accessibility Map is not only about finding a route. It is about helping ensure that the route is trustworthy, realistic, and dignified for the person who has to use it.
 ## 9. Tasks & Attributions
 
 ### Pre-Development
@@ -367,3 +377,12 @@ In short, this part of the project captures one of the main ideas behind the who
 | README documentation                  | Gavin         |
 | Repository preparation for submission | All           |
 | Final Report Delivery                 | All           |
+## 10. References
+
+- OpenStreetMap. https://www.openstreetmap.org/
+- GraphHopper Documentation. https://www.graphhopper.com/
+- Leaflet Documentation. https://leafletjs.com/
+- Express Documentation. https://expressjs.com/
+- SQLite Documentation. https://www.sqlite.org/docs.html
+- GeoFabrik. https://download.geofabrik.de/
+- The Architecture of Open Source Applications. http://www.aosabook.org/
