@@ -82,7 +82,9 @@ An important practical lesson from this design is that accessibility routing oft
 ## 4. User Interaction
 
 ### 4.1 Main map interaction flow
+![Figure 4.1. Route system flow showing the user requesting a route, route calculation and display, barrier logging, stored barrier information, and user feedback contributing to route confidence.](report-assets/route-system-flow.png)
 
+Figure 4.1 gives a high-level view of how the user-facing route process works. A route is requested, calculated, displayed, and then enriched by barrier reports and user feedback. This is useful because it shows that the system is not limited to route generation alone. It also records information about route quality and reported accessibility issues, which makes the application more reflective and more realistic over time.
 The main interaction flow of the application is designed around a simple sequence: the user selects a start point, selects an end point, chooses an accessibility profile and requests a route. The interface provides immediate visual feedback at each step.
 
 #### 4.1.1 **Selecting Points**
