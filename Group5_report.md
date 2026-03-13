@@ -1,11 +1,41 @@
 # Group 5 - UCC Accessibility Map
 
-Authors: Conor Power, Gavin O'Keeffe, Jack O'Neil, James Coakley
-GitHub repo: [UCC Accessibility Map Repository](https://github.com/GavUCC/UCCAccessibilityMap)
+**Authors:**  
+- Conor Power, 122356423  
+- Gavin O'Keeffe, 123763199  
+- Jack O'Neill, 122411716  
+- James Coakley, 122761881  
+
+**GitHub Repository:** [UCC Accessibility Map Repository](https://github.com/GavUCC/UCCAccessibilityMap)
+
+## Academic Integrity Declaration
+
+We confirm that this report is our own work and accurately reflects the contributions of the group members.
+
+## GenAI Declaration
+
+Generative AI tools were used during software development for ideation, debugging support, and code assistance. The final report content was reviewed, edited, and approved by the authors.
+
+## Abstract
+
+The UCC Accessibility Map was developed as a group project to explore how campus navigation could be improved for users with accessibility needs. Standard route planning tools can identify a path between two points, but they do not necessarily reflect whether that route is realistic, safe, or manageable for a person with limited mobility. This project set out to build a map-based system that combines route generation with accessibility-aware logic, user feedback, and barrier reporting.
+
+The application uses a Leaflet frontend for map interaction, a local Express server for backend processing, GraphHopper for route generation, and SQLite for storing barrier and feedback information. GeoJSON and OpenStreetMap-derived data are used to represent buildings, paths, and the wider campus environment. On top of standard route generation, the project introduces hazard-aware logic through accessibility scoring, route warnings, and route profiles such as step-free, gentle gradient, and low energy.
+
+A key feature of the project is that it moves beyond static map display. Users can report barriers they encounter, store route feedback, and contribute to a more realistic representation of campus accessibility conditions. This makes the system more dynamic than a normal campus map. The final result is a prototype accessibility-aware navigation tool that combines open geographic data, local routing, route quality interpretation, and user-submitted information in order to support better movement around UCC.
 
 ## 1. Introduction
 
-Currently, most online maps available to the public, simply provide them with the shortest route from A to B This project was undertaken as a group to strive for better accessibility options for students with disabilities.
+Currently, most online maps available to the public simply provide the shortest route from A to B. This project was undertaken as a group to strive for better accessibility options for students with disabilities.
+
+A major motivation for this project came from seeing accessibility problems first-hand rather than only discussing them in theory. James spent about an hour and a half going around campus with his friend Patrick, a wheelchair user, and was shocked by how much of UCC still feels inaccessible in practice. The Kane Building stood out in particular as a place where the gap between formal access and real usable access became very obvious. That experience gave the project a much more serious focus. It stopped being just a technical map idea and became something rooted in the everyday reality of moving through campus with mobility challenges.
+
+This project therefore began not only as a software challenge, but as a response to a practical and visible problem. Standard campus maps can show where buildings and paths are, but they do not tell a user whether a route is comfortable, safe, or realistic for their own mobility needs. A mathematically valid route is not always an accessible route. That was one of the main reasons the team chose to build a system that combines route generation with accessibility scoring, barrier reporting, and user feedback.
+
+The purpose of the UCC Accessibility Map is to reduce uncertainty for users moving across campus. Rather than simply calculating the shortest path between two points, the project attempts to reflect route quality in a more meaningful way. It does this by combining open map data, local routing, hazard-aware logic, and user-submitted information. In this sense, the project aims to make accessibility information more visible, more current, and more useful in everyday campus navigation.
+
+At the same time, the project needed to stay practical from a user’s point of view. The aim was not only to calculate routes, but to make the application understandable and usable for people navigating a large campus. This meant paying attention to how users choose buildings, follow routes, view route information, and access supporting details such as floor plans. Keeping that user-facing side simple was important because an accessibility tool is only useful if people can actually understand and trust the information it gives them.
+
 
 ## 2. UCC Accessibility Map
 
