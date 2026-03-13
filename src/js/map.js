@@ -192,7 +192,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
       barrierLayer.clearLayers()
 
+      // Same icons used by ACCESSIBILITY_HAZARDS
+      const hazardIcons = {
+        steps: '🚧',
+        steep: '⛰️',
+        surface: '⚠️',
+        narrow: '↔️',
+        kerb: '🚧'
+      }
+
+      const hazardColors = {
+        high: '#f44336',
+        medium: '#ff9800',
+        low: '#ffc107'
+      }
+
       barriers.forEach((b) => {
+
+        const lat = Number(b.lat)
+        const lng = Number(b.lng)
+
+        // Severity circle (like static hazards)
+        L.circle([lat, lng], {
+          radius: 10,
+          color: hazardColors[b.severity] || '#ff9800',
+          fillOpacity: 0.15,
+          weight: 1
+        }).addTo(barrierLayer)
+
+        // Hazard-style icon
+        const icon = L.divIcon({
+          className: 'hazard-marker',
+          html: `<span style="font-size:16px">${hazardIcons[b.barrier_type] || '⚠️'}</span>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        })
+
         const popupHtml = `
           <div class="barrier-popup" data-barrier-id="${b.id}">
             <strong>${b.barrier_type}</strong><br/>
@@ -212,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `
 
-        const marker = L.marker([Number(b.lat), Number(b.lng)])
+        const marker = L.marker([lat, lng], { icon })
           .addTo(barrierLayer)
           .bindPopup(popupHtml)
 
