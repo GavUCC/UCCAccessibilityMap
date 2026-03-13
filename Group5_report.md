@@ -181,10 +181,92 @@ When the user changed the mobility profile or moved a point and immediately clic
 
 **JSON parsing issues**
 During integration, there were intermittent errors where the frontend would fail to parse the routing response. These were traced to cases where GraphHopper returned an error response (for example, when no route could be found between two points) that was not valid JSON in the format the frontend expected. The fix involved checking response.ok before attempting to parse and providing a clear error message to the user when routing failed.
+## 7. Barrier Reporting, Admin Review, and User Feedback
 
-## 7. Conclusion
+### 7.1 Why Barrier Reporting and Feedback Were Needed
 
-## 8. Tasks & Attributions
+One of the biggest problems with accessibility information is that it can go out of date very quickly. A map can show buildings, roads, and paths, but that does not mean it reflects what users actually experience on the ground. A route that looks fine in theory can become awkward or completely unusable because of temporary construction, blocked footpaths, uneven paving, or a route detail that was never captured properly in the first place.
+
+This mattered a lot for our project because the goal was never just to draw a line between two points. The goal was to help users choose routes that are more realistic for their mobility needs. A normal routing engine can return a route that is mathematically valid, but that does not mean it is genuinely accessible. That gap between map data and lived experience is where barrier reporting and user feedback became important.
+
+Barrier reporting gives the user a way to tell the system that something on campus does not match the ideal version of the map. User feedback adds another layer by allowing someone to say whether a generated route was actually useful or not. Together, these features make the system more than a static route planner. They turn it into a small feedback-driven system that can start to reflect real conditions instead of assuming the original dataset is always correct.
+
+![Figure 7.1. Combined diagram showing the barrier reporting and route improvement cycle on the left, and the route feedback loop on the right.](report-assets/barrier-feedback-loop.png)
+
+The combined diagram above shows the main idea behind this part of the project. On the left, once a route is requested and displayed, the user can report a barrier that affects route quality. That barrier is logged and stored, which means the system can later use that information when routes are generated again. On the right, once a route has been generated, the user can also rate it and leave a comment. That feedback is stored separately and gives the project a way to record how useful the route felt in practice.
+
+This was one of the more important ideas in the project because accessibility cannot really be treated as a once-off calculation. Campus conditions change. Temporary barriers appear. Some routes are technically possible but still not comfortable or reliable. The reporting and feedback side of the system helps deal with that uncertainty in a way that the routing engine alone cannot.
+
+Another reason this mattered is that it gave the project a stronger user-centred focus. Instead of the application simply telling users what route to take, it also allows users to tell the application when something is wrong or when a route did not work as expected. That makes the system feel more realistic and more useful. The user is not just following the route. They are also helping improve the route information for future use.
+
+### 7.2 Barrier Reporting Workflow
+
+The barrier reporting workflow was designed to be simple enough that a user could complete it quickly while still submitting information that is meaningful. If the process is too awkward or takes too long, people simply will not use it. That would defeat the point of the feature, so the reporting flow was kept focused and direct.
+
+The first step is switching into reporting mode. This is important because the map already has a routing mode where clicks are used to place start and end points. If the system does not clearly separate those two actions, then a click on the map can accidentally do the wrong thing. During development, making sure reporting mode and routing mode stayed separate was one of the practical frontend issues that had to be solved.
+
+Once reporting mode is active, clicking the map opens the barrier submission form rather than placing a routing point. The location is captured directly from the click, so the user does not need to describe the position manually or enter coordinates themselves. That makes the process faster and also makes the submitted data more precise.
+
+![Figure 7.2. Barrier report form showing captured coordinates, barrier type, severity, optional image upload, and description.](report-assets/barrier-report-form.png)
+
+The form itself collects a small but useful set of inputs. The user can select the barrier type, choose a severity level, attach an optional photo, and add a short description. This was a good balance between usability and detail. It gives the system enough information to understand the issue without forcing the user to complete a long form.
+
+The type of barrier matters because different barriers affect different users in different ways. A staircase is a major issue for some users, while a steep slope or uneven surface may matter more for others. By explicitly recording the barrier type and severity, the project creates a better basis for judging route quality later on.
+
+Once the user submits the form, the data is sent through the backend and stored. In the current project this happens through the Express server in `server.js`, with barrier information stored in the SQLite database. The stored data includes location, type, severity, description, status, timestamp, and image path when a photo has been uploaded. This is important because it means the report is not just a temporary front-end marker. It becomes part of the system’s persistent data.
+
+That persistence matters for two reasons. First, the barrier can still be present when the page is reloaded or when another user opens the application. Second, it allows later review and management rather than treating every report as something that is visible forever without question.
+
+This workflow was one of the stronger parts of the project because it takes a fairly simple user interaction, a click on the map and a short form, and links it to a meaningful backend process. The user sees something small and simple. Underneath that, the project captures useful data that can support route interpretation later on.
+
+### 7.3 Admin Review and Barrier Management
+
+Once users can report barriers, the next question is what happens to those reports afterwards. If the project accepted every report but provided no way to review or resolve them, then the system would quickly become messy. Barriers that were temporary would remain active forever, duplicate issues would build up, and route information would become harder to trust.
+
+For that reason, the project also included support for admin-side barrier management. It is important to describe this honestly. The current system does not have a fully separate polished admin dashboard with accounts, permissions, analytics, and all the machinery of a production application. That would have been far beyond the scope of the module. What it does include is backend support for reviewing barrier data and updating barrier status.
+
+In practice, this means that a reported barrier is not simply submitted and forgotten. It can move through a basic lifecycle such as pending, in review, or resolved. That may seem like a small feature, but it is actually quite important. It means the project treats barrier data as something that can change over time rather than as fixed truth.
+
+This was one of the areas where the design had to stay pragmatic. A full admin system would have taken too much time and shifted the project away from its main focus. Instead, the project concentrated on the underlying mechanics that really matter. If a barrier can be stored, reviewed, updated, and resolved, then the system already has the beginnings of a meaningful management process.
+
+Another important point is that this supports trust. If users are going to report problems, they need to feel that those problems can be checked or resolved later. Even a lightweight admin-side workflow gives the system more credibility than a one-way submission form with no follow-up path.
+
+This also links back to the quality of routes. If a route repeatedly passes through an area with unresolved barriers, the system should not treat that route in the same way as a clean path. The admin review and barrier status side of the system supports that broader idea, even if it is still lightweight in its current form.
+
+Although this report does not include a separate screenshot of the admin-side controls, the implemented backend endpoints support review and resolution actions for reported barriers, which allows the application to move beyond simple submission and towards basic barrier management.
+
+### 7.4 User Feedback and Route Confidence
+
+Barrier reporting captures specific obstacles, but it does not tell the whole story. A route can still feel poor even if no single barrier has been reported. It may be awkward, tiring, confusing, or simply less comfortable than another option. This is why user feedback was added as a separate feature.
+
+The feedback form appears after a route has been generated. This timing is deliberate. It makes sense to ask for feedback only after the user has actually seen the route and its route information. Once the route is displayed, the user can leave an optional name, a rating, and a comment about the route.
+
+![Figure 7.3. Route results panel showing directions, accessibility score, hazard warnings, and the user feedback form.](report-assets/route-results-feedback.png)
+
+This screenshot shows why the feedback system fits naturally into the rest of the interface. The route is displayed, warnings are listed, the score is visible, and the feedback box appears in the same workflow. The user does not need to open a separate page or perform a detached action. Feedback is part of the route experience itself.
+
+On the backend, this feedback is stored in SQLite through the feedback API. In the current project this includes a name field, rating, comment, and submission timestamp. That means the system can retain user responses over time rather than simply showing the form as a dead-end interaction.
+
+The value of this feature is that it captures something different from barrier reports. Barrier reports point to a specific issue, such as construction, steps, or a blocked path. Feedback captures the broader experience of using the route. A route may not contain a single dramatic barrier but may still feel poor overall. On the other hand, a route may include warnings and still be considered usable. Feedback gives the system a way to preserve that more human judgement.
+
+This connects closely to the idea of route confidence. In the current project, feedback is stored and retrievable, but it does not yet recalculate route scoring in a fully automatic way. Even so, the project lays the groundwork for that future direction. The system now has a place to store how users judged a route, and that is the first necessary step if route confidence is to become more sophisticated later.
+
+From a software engineering point of view, this improves the balance of the project. Without feedback, the system is mostly predictive. It generates a route and tells the user what it thinks. With feedback, the system becomes reflective as well. It begins to record where that route advice matched reality and where it did not.
+
+### 7.5 Why This Part of the System Matters
+
+Taken together, barrier reporting, admin review support, and user feedback are some of the most important features in the whole project. They move the application beyond static map display and into something more dynamic. A campus accessibility map is only genuinely useful if it can account for the fact that accessibility is not fixed. Conditions change. New barriers appear. Old barriers are resolved. Some routes that look fine in theory still turn out to be inconvenient in practice.
+
+That is why this part of the project matters so much. It gives the system memory, and more importantly, it gives that memory a connection to user experience. The routing engine and accessibility scoring provide one side of the project. They handle calculation. Barrier reporting and feedback provide the other side. They bring in reality.
+
+This section also helps explain why the application is more than a route-drawing tool. The project is trying to reduce uncertainty. A user should not have to discover accessibility problems only after they have already committed to a route. By allowing barrier submission and route feedback, the system starts to move towards something more useful and more humane.
+
+There is still a lot of room for future work. A stronger standalone admin interface would make review easier. Feedback could be tied more directly to specific route profiles or route histories. Confidence scoring could become more sophisticated. Temporary barriers could expire automatically if they are not re-reported. But those future improvements only make sense because the basic feedback loop now exists.
+
+In short, this part of the project captures one of the main ideas behind the whole system. Accessibility cannot be treated as a one-time calculation. It has to be treated as an ongoing relationship between route data, software logic, and the people who actually move through the campus.
+## 8. Conclusion
+
+## 9. Tasks & Attributions
 
 ### Pre-Development
 
