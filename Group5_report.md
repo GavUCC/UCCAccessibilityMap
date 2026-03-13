@@ -136,6 +136,9 @@ After a route is generated, the control panel shows the distance, estimated walk
 #### 4.1.5 **Clearing**
 
 The "Clear" button resets all state: markers, route, directions, score and the map returns to its default view centred on UCC.
+#### 4.1.6 **Floor Plan Pop-ups**
+
+Clicking on a building in UCC opens the floor plan for that building in a new tab. This approach was chosen for readability and usability. Keeping the floor plans on a separate page avoids overcrowding the main map interface and makes it easier for the user to view internal building information without losing their place in the route-planning workflow.
 
 ### 4.2 User Interface Design Choices
 
@@ -204,7 +207,13 @@ As described in Section 6.1, the initial OSRM integration produced working route
 #### 6.2.2 Frontend Interaction Challenges
 
 Several frontend bugs emerged during development, particularly around the interaction between routing and barrier reporting.
+### 6.3 Personal Reflection (Jack)
 
+My biggest lesson from this project was learning to step up and put myself forward for specific tasks. Because the rest of the group were also willing to take responsibility for their own areas of work, I had to make myself known when there was something I wanted to contribute to or implement. That was a useful lesson in group work, because it showed me that good teamwork does not just happen automatically. You have to actively communicate what you want to do and then follow through on it.
+
+I also learned the importance of being willing to move away from a system that is not working, even if the original idea seemed better on paper. The floor plan popup being displayed on the same page as the map initially seemed like the stronger idea, but once it became clear that showing multiple floors in the same interface would make the page too cluttered, opening the floor plans in a new tab became the more practical solution. That was a good reminder that a simpler implementation is sometimes the better one if it improves usability.
+
+One limitation I ran into was that it was not possible to get floor plans for every building. Some buildings were much easier to find information for than others, while others were more restricted or simply harder to locate on the UCC website. Looking back, I could have done more to explore additional sources and routes for finding missing information. That is something I would improve on in future work, both in terms of persistence and in terms of being more flexible when information is not easy to access.
 **Marker state issues**
 Early versions had a problem where clicking the map in reporting mode would also set or overwrite a routing point. This happened because both the routing click handler and the reporting click handler were listening to the same map click event. The fix was to check reportingMode at the top of the click handler and return early if it was active, so that routing point logic is completely skipped during barrier placement. Similarly, in building mode, map clicks are intercepted to prevent accidental point placement, the user is instead prompted to use the dropdown selectors.
 
@@ -306,6 +315,9 @@ From a technical point of view, the project developed from a simple routing prot
 The project also demonstrated the importance of user contribution. Barrier reporting and feedback do not simply add extra form fields to the application. They allow the system to represent real conditions more honestly. A route can now be judged not only by geometry but also by warnings, reported issues, and user experience. That makes the map more dynamic, more useful, and more grounded in reality.
 
 Jack’s contributions also helped keep the system practical for real campus use. Verification of building data, route reconnaissance, and floor plan support all made the application more usable from a student’s point of view. This matters because an accessibility tool only becomes meaningful when people can connect the software’s route suggestions to the spaces they are actually trying to reach.
+The final application largely met the expectations we had set for it at the start of the project. It provides a clear flow for the user before, during, and after a journey. A user can select a route, view accessibility information, receive warnings, provide feedback, and report unexpected barriers or blockages. In that sense, the project moved beyond a simple map and became a more complete accessibility-aware navigation tool.
+
+At the same time, the project also revealed areas where further work is still needed. One important gap is support for users with visual impairments. At present, support for blind or hard-of-sight users is still limited. In particular, the lack of stronger alt text and improved screen-reader support means that a user relying on assistive technologies would not benefit from the system as much as they should. This is a serious limitation and an important area for future improvement if the project were to be developed further.
 
 There is still plenty of scope for future work. A fuller admin interface, richer route-specific feedback, stronger confidence modelling, and broader campus data coverage would all improve the system further. Even so, the project already demonstrates something valuable: accessibility information becomes much more meaningful when it is treated as local, changing, and shaped by real experience. Ultimately, the UCC Accessibility Map is not only about finding a route. It is about helping ensure that the route is trustworthy, realistic, and dignified for the person who has to use it.
 ## 9. Tasks & Attributions
